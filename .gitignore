@@ -1,0 +1,17 @@
+# React
+frontend/node_modules/
+frontend/build/
+
+# Spring Boot
+demo/target/
+
+# IntelliJ
+.idea/
+*.iml
+
+# Environment variables / secrets
+.env
+*.env
+
+# Logs
+*.log

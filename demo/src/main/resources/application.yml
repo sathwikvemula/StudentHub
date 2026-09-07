@@ -1,0 +1,33 @@
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-binding-errors: always
+
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/registration
+    username: root
+    password: shiva12
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  mail:
+    host: localhost
+    port: 1025
+    username: hello
+    password: shiva12
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls.enable: true
+          ssl.trust: "*"
+          connectiontimeout: 5000
+          timeout: 3000
+          writetimeout: 5000
