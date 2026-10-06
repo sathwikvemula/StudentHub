@@ -24,7 +24,9 @@ export const connectWebSocket = (
 
   stompClient = new Client({
     webSocketFactory: () => {
-      return new SockJS("http://localhost:8080/ws");
+      return new SockJS(
+  `${process.env.REACT_APP_API_URL || "http://localhost:8080"}/ws`
+);
     },
      connectHeaders: {
     Authorization: `Bearer ${token}`

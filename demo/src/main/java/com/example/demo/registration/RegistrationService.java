@@ -8,6 +8,7 @@ import com.example.demo.email.EmailSender;
 import com.example.demo.registration.token.ConfirmationToken;
 import com.example.demo.registration.token.ConfirmationTokenService;
 import com.example.demo.security.jwt.JwtUtil;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Service
 @AllArgsConstructor
 public class RegistrationService {
+    @Value("${BACKEND_URL:http://localhost:8080}")
+    private String backendUrl;
 
     private final AppUserService appUserService;
     private final EmailValidator emailValidator;
@@ -49,7 +52,8 @@ public class RegistrationService {
         // Enable the user immediately so login works during local testing
         appUserService.enableAppUser(request.getEmail());
 
-        String link = "http://localhost:8080/api/v1/auth/confirm?token=" + token;
+
+        String link = backendUrl + "/api/v1/auth/confirm?token=" + token;
         try {
             emailSender.send(request.getEmail(), buildEmail(request.getFirstName(), link));
         } catch (Exception e) {
