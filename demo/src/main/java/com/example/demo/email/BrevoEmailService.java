@@ -1,4 +1,3 @@
-
 package com.example.demo.email;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -14,21 +13,20 @@ import java.util.Map;
 public class BrevoEmailService {
 
     private final RestClient restClient;
+    private final String apiKey;
     private final String senderEmail;
     private final String senderName;
 
     public BrevoEmailService(
-            RestClient.Builder builder,
             @Value("${BREVO_API_KEY}") String apiKey,
             @Value("${BREVO_SENDER_EMAIL}") String senderEmail,
             @Value("${BREVO_SENDER_NAME:StudentHub}") String senderName) {
 
-        this.restClient = builder
-                .baseUrl("https://api.brevo.com/v3")
-                .defaultHeader("api-key", apiKey)
-                .defaultHeader("accept", "application/json")
-                .build();
+        this.restClient = RestClient.create(
+                "https://api.brevo.com/v3"
+        );
 
+        this.apiKey = apiKey;
         this.senderEmail = senderEmail;
         this.senderName = senderName;
     }
@@ -71,6 +69,8 @@ public class BrevoEmailService {
 
         restClient.post()
                 .uri("/smtp/email")
+                .header("api-key", apiKey)
+                .header("accept", "application/json")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(request)
                 .retrieve()
