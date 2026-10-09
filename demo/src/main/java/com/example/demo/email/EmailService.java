@@ -1,46 +1,83 @@
 package com.example.demo.email;
 
-import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+import java.util.List;
+import java.util.Map;
 
 @Service
-@AllArgsConstructor
 public class EmailService implements EmailSender {
 
-    private final static Logger LOGGER =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(EmailService.class);
 
-    private final JavaMailSender javaMailSender;
+    private final RestClient restClient;
+    private final String apiKey;
+    private final String senderEmail;
+    private final String senderName;
+
+    public EmailService(
+            @Value("${BREVO_API_KEY}") String apiKey,
+            @Value("${BREVO_SENDER_EMAIL}") String senderEmail,
+            @Value("${BREVO_SENDER_NAME:StudentHub}") String senderName) {
+
+        this.restClient = RestClient.create("https://api.brevo.com/v3");
+        this.apiKey = apiKey;
+        this.senderEmail = senderEmail;
+        this.senderName = senderName;
+    }
 
     @Override
-    @Async
     public void send(String to, String email) {
+        Map<String, Object> request = Map.of(
+                "sender", Map.of(
+                        "name", senderName,
+                        "email", senderEmail
+                ),
+                "to", List.of(Map.of("email", to)),
+                "subject", "Confirm your email",
+                "htmlContent", email
+        );
+
         try {
-            MimeMessage mimeMessage =
-                    javaMailSender.createMimeMessage();
+            restClient.post()
+                    .uri("/smtp/email")
+                    .header("api-key", apiKey)
+                    .header("accept", "application/json")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(request)
+                    .retrieve()
+                    .toBodilessEntity();
 
-            MimeMessageHelper helper =
-                    new MimeMessageHelper(mimeMessage, "utf-8");
+            LOGGER.info("Verification email accepted by Brevo.");
 
-            helper.setText(email, true);
-            helper.setTo(to);
-            helper.setSubject("Confirm your email");
-            helper.setFrom("hello@sathwik.com");
+        } catch (RestClientResponseException e) {
+            LOGGER.error(
+                    "Brevo rejected email. HTTP status: {}, response: {}",
+                    e.getStatusCode(),
+                    e.getResponseBodyAsString()
+            );
 
+            throw new IllegalStateException(
+                    "Brevo email API rejected request with HTTP "
+                            + e.getStatusCode(),
+                    e
+            );
 
-            javaMailSender.send(mimeMessage);
+        } catch (RestClientException e) {
+            LOGGER.error("Failed to connect to Brevo API.", e);
 
-        } catch (MessagingException e) {
-            LOGGER.error("failed to send email", e);
-            throw new IllegalStateException("failed to send email");
+            throw new IllegalStateException(
+                    "Failed to send email using Brevo API.",
+                    e
+            );
         }
     }
 }
